@@ -705,6 +705,17 @@
   }
   .phone::-webkit-scrollbar{ display:none; }
 
+  /* On mobile-width screens, make the phone full viewport and snap properly */
+  @media (max-width:440px){
+    .stage{ background:var(--cream); }
+    .phone{
+      width:100%;
+      height:100dvh;
+      box-shadow:none;
+      scroll-snap-type:y mandatory;
+    }
+  }
+
   /* ---------- card base ---------- */
   .card{
     position:relative;
