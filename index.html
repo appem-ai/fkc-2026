@@ -1213,7 +1213,7 @@
         <div class="row"><div class="k">Hours</div><div class="v">Open 10 AM – 6 PM</div></div>
         <div class="row"><div class="k">Cost</div><div class="v">~$59 per person<small>Weekday gate price</small></div></div>
       </div>
-      <a class="maplink" style="margin-top:24px" href="https://www.google.com/maps/search/?api=1&query=SplashDown+Beach+16+Old+Route+9W+Fishkill+NY" target="_blank" rel="noopener">
+      <a class="maplink" data-track="map:SplashDown Beach" style="margin-top:24px" href="https://www.google.com/maps/search/?api=1&query=SplashDown+Beach+16+Old+Route+9W+Fishkill+NY" target="_blank" rel="noopener">
         <svg class="icon"><use href="#i-pin"/></svg> Open in Google Maps <span class="arr">→</span>
       </a>
     </div>
@@ -1237,7 +1237,7 @@
         <div class="row"><div class="k">Evening</div><div class="v">Firepit hangout under the trees</div></div>
         <div class="row"><div class="k">Address</div><div class="v">882 NY-212, Saugerties, NY 12477</div></div>
       </div>
-      <a class="maplink" style="margin-top:22px" href="https://www.google.com/maps/search/?api=1&query=AutoCamp+Catskills+882+NY-212+Saugerties+NY+12477" target="_blank" rel="noopener">
+      <a class="maplink" data-track="map:AutoCamp Catskills" style="margin-top:22px" href="https://www.google.com/maps/search/?api=1&query=AutoCamp+Catskills+882+NY-212+Saugerties+NY+12477" target="_blank" rel="noopener">
         <svg class="icon"><use href="#i-pin"/></svg> Open in Google Maps <span class="arr">→</span>
       </a>
     </div>
@@ -1403,7 +1403,7 @@
           <div><span class="k">Cost</span><span>$10 per vehicle — not per person</span></div>
           <div><span class="k">Drive</span><span>~40 min · New Paltz, NY · ~200 ft walk to sand</span></div>
         </div>
-        <a class="maplink" href="https://www.google.com/maps/search/?api=1&query=Minnewaska+State+Park+Preserve+New+Paltz+NY" target="_blank" rel="noopener"><svg class="icon"><use href="#i-pin"/></svg> Open in Google Maps <span class="arr">→</span></a>
+        <a class="maplink" data-track="map:Minnewaska State Park" href="https://www.google.com/maps/search/?api=1&query=Minnewaska+State+Park+Preserve+New+Paltz+NY" target="_blank" rel="noopener"><svg class="icon"><use href="#i-pin"/></svg> Open in Google Maps <span class="arr">→</span></a>
       </div>
 
       <div class="opt">
@@ -1415,7 +1415,7 @@
           <div><span class="k">Cost</span><span>Free</span></div>
           <div><span class="k">Vibe</span><span>A quick waterfall dip on the way out</span></div>
         </div>
-        <a class="maplink" href="https://maps.app.goo.gl/3VsZADycAUQKhA1a8" target="_blank" rel="noopener"><svg class="icon"><use href="#i-pin"/></svg> Open in Google Maps <span class="arr">→</span></a>
+        <a class="maplink" data-track="map:Schalks Falls" href="https://maps.app.goo.gl/3VsZADycAUQKhA1a8" target="_blank" rel="noopener"><svg class="icon"><use href="#i-pin"/></svg> Open in Google Maps <span class="arr">→</span></a>
       </div>
     </div>
     <div class="foot"><span>Lake or Falls · Group Decides</span><span>Friday</span></div>
@@ -1654,10 +1654,13 @@
     var el=e.target;
     // Walk up to find the nearest trackable element
     for(var i=0;i<5&&el&&el!==document;i++,el=el.parentElement){
+      // Explicit data-track attribute takes priority
+      var track=el.getAttribute&&el.getAttribute('data-track');
+      if(track){ push({type:'click',target:track}); return; }
       if(el.tagName==='A'){
-        var href=el.getAttribute('href')||'';
         var text=(el.textContent||'').trim().slice(0,60);
-        push({type:'click',target:href||text||'link'});
+        var href=el.getAttribute('href')||'';
+        push({type:'click',target:text||href||'link'});
         return;
       }
       if(el.tagName==='BUTTON'){
