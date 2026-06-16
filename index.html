@@ -1580,31 +1580,71 @@
 <script>
 (function(){
   'use strict';
-  var ENDPOINT='https://fkc-analytics.vercel.app/api/collect';
-  var FLUSH_MS=8000;       // flush every 8s while active
-  var IDLE_FLUSH_MS=3000;  // flush 3s after last interaction
+  var ENDPOINT='https://fkc-analytics.vercel.app/api/ping';
+  var FLUSH_MS=8000;
+  var IDLE_FLUSH_MS=3000;
 
-  // Session ID (unique per tab visit, no cookies)
   var sid=Math.random().toString(36).slice(2)+Date.now().toString(36);
   var queue=[];
   var flushTimer=null;
   var idleTimer=null;
+  var firstFlushDone=false;
 
   function push(evt){ queue.push(evt); scheduleFlush(); }
+
+  // --- Transport chain: sendBeacon(text/plain) → fetch → img pixel ---
+  function send(payload, method){
+    // 1. Try sendBeacon with text/plain (no CORS preflight)
+    if(navigator.sendBeacon){
+      try{
+        var ok=navigator.sendBeacon(ENDPOINT,new Blob([payload],{type:'text/plain'}));
+        if(ok) return; // success
+      }catch(e){}
+    }
+    // 2. Fetch fallback
+    try{
+      fetch(ENDPOINT,{
+        method:'POST',
+        body:payload,
+        headers:{'Content-Type':'text/plain'},
+        keepalive:true
+      }).then(function(r){
+        if(!r.ok) pixelFallback(payload);
+      }).catch(function(){ pixelFallback(payload); });
+      return;
+    }catch(e){}
+    // 3. Image pixel fallback (GET, bypasses most blockers)
+    pixelFallback(payload);
+  }
+
+  function pixelFallback(payload){
+    try{
+      var d=btoa(payload);
+      // URL length limit ~2000; if too long, truncate events
+      if(d.length>1800) return;
+      var img=new Image();
+      img.src=ENDPOINT+'?d='+encodeURIComponent(d);
+    }catch(e){}
+  }
 
   function flush(){
     if(!queue.length) return;
     var batch=queue.splice(0,100);
     var payload=JSON.stringify({sid:sid,events:batch});
-    // Prefer sendBeacon (works on page exit), fall back to fetch
-    if(navigator.sendBeacon){
-      navigator.sendBeacon(ENDPOINT,new Blob([payload],{type:'application/json'}));
-    } else {
-      fetch(ENDPOINT,{method:'POST',body:payload,headers:{'Content-Type':'application/json'},keepalive:true}).catch(function(){});
-    }
+    send(payload);
+  }
+
+  function flushImmediate(){
+    // Immediate flush for first pageview — don't wait for timer
+    if(!queue.length) return;
+    clearTimeout(flushTimer); flushTimer=null;
+    clearTimeout(idleTimer); idleTimer=null;
+    flush();
   }
 
   function scheduleFlush(){
+    // First event: flush immediately to confirm script is running
+    if(!firstFlushDone){ firstFlushDone=true; setTimeout(flushImmediate,50); return; }
     if(!flushTimer) flushTimer=setTimeout(function(){ flushTimer=null; flush(); },FLUSH_MS);
     clearTimeout(idleTimer);
     idleTimer=setTimeout(flush,IDLE_FLUSH_MS);
@@ -1628,7 +1668,6 @@
   // ---------- Section Visibility ----------
   var cards=document.querySelectorAll('.card[data-screen-label]');
   var enterTimes={};
-  var observed={};
   if(cards.length && 'IntersectionObserver' in window){
     var observer=new IntersectionObserver(function(entries){
       entries.forEach(function(entry){
@@ -1639,10 +1678,7 @@
         } else if(enterTimes[label]){
           var dur=Date.now()-enterTimes[label];
           delete enterTimes[label];
-          // Only log if visible >500ms (ignore scroll-throughs)
-          if(dur>500){
-            push({type:'section_view',section:label,duration:dur});
-          }
+          if(dur>500) push({type:'section_view',section:label,duration:dur});
         }
       });
     },{root:phone,threshold:0.4});
@@ -1652,9 +1688,7 @@
   // ---------- Click Tracking ----------
   document.addEventListener('click',function(e){
     var el=e.target;
-    // Walk up to find the nearest trackable element
     for(var i=0;i<5&&el&&el!==document;i++,el=el.parentElement){
-      // Explicit data-track attribute takes priority
       var track=el.getAttribute&&el.getAttribute('data-track');
       if(track){ push({type:'click',target:track}); return; }
       if(el.tagName==='A'){
@@ -1677,7 +1711,6 @@
   },true);
 
   // ---------- Flush on exit ----------
-  // Flush remaining sections on exit
   function flushSections(){
     var now=Date.now();
     for(var label in enterTimes){
@@ -1691,8 +1724,10 @@
   window.addEventListener('visibilitychange',function(){
     if(document.visibilityState==='hidden'){ flushSections(); flush(); }
   });
+  // Belt-and-suspenders: also flush on beforeunload for older browsers
+  window.addEventListener('beforeunload',function(){ flushSections(); flush(); });
 
-  // Initial pageview push
+  // Initial pageview — fires immediately
   push({type:'section_view',section:'_pageload',duration:0});
 })();
 </script>
