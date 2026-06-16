@@ -1678,7 +1678,7 @@
         } else if(enterTimes[label]){
           var dur=Date.now()-enterTimes[label];
           delete enterTimes[label];
-          if(dur>500) push({type:'section_view',section:label,duration:dur});
+          if(dur>3000) push({type:'section_view',section:label,duration:dur});
         }
       });
     },{root:phone,threshold:0.4});
@@ -1698,7 +1698,10 @@
         return;
       }
       if(el.tagName==='BUTTON'){
-        var label=el.getAttribute('aria-label')||(el.textContent||'').trim().slice(0,60);
+        if(el.classList.contains('hamburger')||el.classList.contains('nav-close')||el.classList.contains('menu-nav')) return;
+        var bLabel=el.getAttribute('aria-label')||'';
+        if(/^(Open menu|Close menu|Next page|Previous page)$/i.test(bLabel)) return;
+        var label=bLabel||(el.textContent||'').trim().slice(0,60);
         push({type:'click',target:'btn:'+label});
         return;
       }
@@ -1715,7 +1718,7 @@
     var now=Date.now();
     for(var label in enterTimes){
       var dur=now-enterTimes[label];
-      if(dur>500) push({type:'section_view',section:label,duration:dur});
+      if(dur>3000) push({type:'section_view',section:label,duration:dur});
     }
     enterTimes={};
   }
