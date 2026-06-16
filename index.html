@@ -1043,6 +1043,12 @@
   .room-tag .sleeps{ margin-left:auto; font-family:"Space Mono",monospace; font-size:10px; letter-spacing:0.12em; text-transform:uppercase; color:var(--copper-soft); font-weight:400; border:1px solid var(--line-light); padding:4px 8px; }
   .list.compact li{ padding:7px 0; font-size:14.5px; }
 
+  /* ---------- menu lightbox ---------- */
+  .menu-lightbox{ position:fixed; inset:0; z-index:200; background:rgba(0,0,0,0.92); display:flex; align-items:center; justify-content:center; opacity:0; pointer-events:none; transition:opacity 0.25s ease; -webkit-tap-highlight-color:transparent; }
+  .menu-lightbox.active{ opacity:1; pointer-events:auto; }
+  .menu-lightbox-close{ position:absolute; top:16px; right:16px; width:44px; height:44px; border:none; background:rgba(255,255,255,0.15); color:#fff; font-size:28px; line-height:1; border-radius:50%; cursor:pointer; z-index:201; }
+  .menu-lightbox-img{ max-width:95vw; max-height:90vh; object-fit:contain; touch-action:pinch-zoom pan-x pan-y; user-select:none; -webkit-user-select:none; }
+
   /* ---------- menu pager ---------- */
   .menu-pager{ position:relative; margin-top:18px; }
   .menu-track{ display:flex; overflow-x:auto; scroll-snap-type:x mandatory; -webkit-overflow-scrolling:touch; scrollbar-width:none; }
@@ -1747,6 +1753,38 @@
   push({type:'section_view',section:'_pageload',duration:0});
 })();
 </script>
-<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "41bf1495cd0b4fe9ae0b2b0d0a4c1428"}'></script><!-- End Cloudflare Web Analytics -->
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "41bf1495cd0b4fe9ae0b2b0d0a4c1428"}'>
+
+    // Menu lightbox
+    (function(){
+      var lb=document.getElementById('menuLightbox');
+      var lbImg=document.getElementById('menuLightboxImg');
+      var lbClose=document.getElementById('menuLightboxClose');
+      if(!lb||!lbImg||!lbClose) return;
+      [].slice.call(document.querySelectorAll('.menu-page img')).forEach(function(img){
+        img.style.cursor='zoom-in';
+        img.addEventListener('click',function(){
+          lbImg.src=img.src;
+          lb.classList.add('active');
+          document.body.style.overflow='hidden';
+        });
+      });
+      function closeLb(){
+        lb.classList.remove('active');
+        document.body.style.overflow='';
+      }
+      lbClose.addEventListener('click',closeLb);
+      lb.addEventListener('click',function(e){
+        if(e.target===lb) closeLb();
+      });
+    })();
+</script><!-- End Cloudflare Web Analytics -->
+
+<!-- Menu Lightbox -->
+<div class="menu-lightbox" id="menuLightbox">
+  <button class="menu-lightbox-close" id="menuLightboxClose" aria-label="Close">&times;</button>
+  <img class="menu-lightbox-img" id="menuLightboxImg" src="" alt="Menu page" />
+</div>
+
 </body>
 </html>
