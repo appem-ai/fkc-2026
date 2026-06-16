@@ -1585,6 +1585,14 @@
 <script>
 (function(){
   'use strict';
+  // Owner opt-out: ?notrack in URL or localStorage flag
+  try{
+    if(/[?&]notrack/.test(location.search)){
+      try{localStorage.setItem('fkc_notrack','1');}catch(e){}
+      return;
+    }
+    if(localStorage.getItem('fkc_notrack')) return;
+  }catch(e){}
   var ENDPOINT='https://fkc-analytics.vercel.app/api/ping';
   var FLUSH_MS=8000;
   var IDLE_FLUSH_MS=3000;
