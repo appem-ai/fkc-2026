@@ -1753,38 +1753,39 @@
   push({type:'section_view',section:'_pageload',duration:0});
 })();
 </script>
-<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "41bf1495cd0b4fe9ae0b2b0d0a4c1428"}'>
-
-    // Menu lightbox
-    (function(){
-      var lb=document.getElementById('menuLightbox');
-      var lbImg=document.getElementById('menuLightboxImg');
-      var lbClose=document.getElementById('menuLightboxClose');
-      if(!lb||!lbImg||!lbClose) return;
-      [].slice.call(document.querySelectorAll('.menu-page img')).forEach(function(img){
-        img.style.cursor='zoom-in';
-        img.addEventListener('click',function(){
-          lbImg.src=img.src;
-          lb.classList.add('active');
-          document.body.style.overflow='hidden';
-        });
-      });
-      function closeLb(){
-        lb.classList.remove('active');
-        document.body.style.overflow='';
-      }
-      lbClose.addEventListener('click',closeLb);
-      lb.addEventListener('click',function(e){
-        if(e.target===lb) closeLb();
-      });
-    })();
-</script><!-- End Cloudflare Web Analytics -->
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "41bf1495cd0b4fe9ae0b2b0d0a4c1428"}'></script><!-- End Cloudflare Web Analytics -->
 
 <!-- Menu Lightbox -->
 <div class="menu-lightbox" id="menuLightbox">
   <button class="menu-lightbox-close" id="menuLightboxClose" aria-label="Close">&times;</button>
   <img class="menu-lightbox-img" id="menuLightboxImg" src="" alt="Menu page" />
 </div>
+
+<script>
+// Menu lightbox
+(function(){
+  var lb=document.getElementById('menuLightbox');
+  var lbImg=document.getElementById('menuLightboxImg');
+  var lbClose=document.getElementById('menuLightboxClose');
+  if(!lb||!lbImg||!lbClose) return;
+  [].slice.call(document.querySelectorAll('.menu-page img')).forEach(function(img){
+    img.style.cursor='zoom-in';
+    img.addEventListener('click',function(){
+      lbImg.src=img.src;
+      lb.classList.add('active');
+      document.body.style.overflow='hidden';
+    });
+  });
+  function closeLb(){
+    lb.classList.remove('active');
+    document.body.style.overflow='';
+  }
+  lbClose.addEventListener('click',closeLb);
+  lb.addEventListener('click',function(e){
+    if(e.target===lb) closeLb();
+  });
+})();
+</script>
 
 </body>
 </html>
