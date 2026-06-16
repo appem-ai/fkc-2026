@@ -1576,6 +1576,123 @@
     document.addEventListener('keydown',function(e){ if(e.key==='Escape') close(); });
   })();
 </script>
+<!-- FKC Section Analytics -->
+<script>
+(function(){
+  'use strict';
+  var ENDPOINT='https://fkc-analytics.vercel.app/api/collect';
+  var FLUSH_MS=8000;       // flush every 8s while active
+  var IDLE_FLUSH_MS=3000;  // flush 3s after last interaction
+
+  // Session ID (unique per tab visit, no cookies)
+  var sid=Math.random().toString(36).slice(2)+Date.now().toString(36);
+  var queue=[];
+  var flushTimer=null;
+  var idleTimer=null;
+
+  function push(evt){ queue.push(evt); scheduleFlush(); }
+
+  function flush(){
+    if(!queue.length) return;
+    var batch=queue.splice(0,100);
+    var payload=JSON.stringify({sid:sid,events:batch});
+    // Prefer sendBeacon (works on page exit), fall back to fetch
+    if(navigator.sendBeacon){
+      navigator.sendBeacon(ENDPOINT,new Blob([payload],{type:'application/json'}));
+    } else {
+      fetch(ENDPOINT,{method:'POST',body:payload,headers:{'Content-Type':'application/json'},keepalive:true}).catch(function(){});
+    }
+  }
+
+  function scheduleFlush(){
+    if(!flushTimer) flushTimer=setTimeout(function(){ flushTimer=null; flush(); },FLUSH_MS);
+    clearTimeout(idleTimer);
+    idleTimer=setTimeout(flush,IDLE_FLUSH_MS);
+  }
+
+  // ---------- Scroll Depth ----------
+  var scrollHits={};
+  var phone=document.querySelector('.phone');
+  if(phone){
+    phone.addEventListener('scroll',function(){
+      var pct=phone.scrollTop/(phone.scrollHeight-phone.clientHeight)*100;
+      [25,50,75,100].forEach(function(d){
+        if(pct>=d && !scrollHits[d]){
+          scrollHits[d]=true;
+          push({type:'scroll',depth:d});
+        }
+      });
+    },{passive:true});
+  }
+
+  // ---------- Section Visibility ----------
+  var cards=document.querySelectorAll('.card[data-screen-label]');
+  var enterTimes={};
+  var observed={};
+  if(cards.length && 'IntersectionObserver' in window){
+    var observer=new IntersectionObserver(function(entries){
+      entries.forEach(function(entry){
+        var label=entry.target.getAttribute('data-screen-label');
+        if(!label) return;
+        if(entry.isIntersecting){
+          enterTimes[label]=Date.now();
+        } else if(enterTimes[label]){
+          var dur=Date.now()-enterTimes[label];
+          delete enterTimes[label];
+          // Only log if visible >500ms (ignore scroll-throughs)
+          if(dur>500){
+            push({type:'section_view',section:label,duration:dur});
+          }
+        }
+      });
+    },{root:phone,threshold:0.4});
+    cards.forEach(function(c){ observer.observe(c); });
+  }
+
+  // ---------- Click Tracking ----------
+  document.addEventListener('click',function(e){
+    var el=e.target;
+    // Walk up to find the nearest trackable element
+    for(var i=0;i<5&&el&&el!==document;i++,el=el.parentElement){
+      if(el.tagName==='A'){
+        var href=el.getAttribute('href')||'';
+        var text=(el.textContent||'').trim().slice(0,60);
+        push({type:'click',target:href||text||'link'});
+        return;
+      }
+      if(el.tagName==='BUTTON'){
+        var label=el.getAttribute('aria-label')||(el.textContent||'').trim().slice(0,60);
+        push({type:'click',target:'btn:'+label});
+        return;
+      }
+      if(el.classList&&el.classList.contains('btn')){
+        var btnText=(el.textContent||'').trim().slice(0,60);
+        push({type:'click',target:'cta:'+btnText});
+        return;
+      }
+    }
+  },true);
+
+  // ---------- Flush on exit ----------
+  // Flush remaining sections on exit
+  function flushSections(){
+    var now=Date.now();
+    for(var label in enterTimes){
+      var dur=now-enterTimes[label];
+      if(dur>500) push({type:'section_view',section:label,duration:dur});
+    }
+    enterTimes={};
+  }
+
+  window.addEventListener('pagehide',function(){ flushSections(); flush(); });
+  window.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='hidden'){ flushSections(); flush(); }
+  });
+
+  // Initial pageview push
+  push({type:'section_view',section:'_pageload',duration:0});
+})();
+</script>
 <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "41bf1495cd0b4fe9ae0b2b0d0a4c1428"}'></script><!-- End Cloudflare Web Analytics -->
 </body>
 </html>
